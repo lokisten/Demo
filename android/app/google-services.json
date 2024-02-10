@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "198996371343",
+    "project_id": "sajhabookstore",
+    "storage_bucket": "sajhabookstore.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198996371343:android:508c7cd18165d39e404dfa",
+        "android_client_info": {
+          "package_name": "com.example.sajhabookstore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB22xWy99xjXerlI-c-sFvShkTrUlFs3nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
