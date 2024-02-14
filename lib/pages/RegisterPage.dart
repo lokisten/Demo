@@ -1,13 +1,13 @@
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sajhabackup/EasyConst/Colors.dart';
-//import 'package:sajhabackup/EasyConst/Colors.dart';
+import 'package:sajhabackup/EasyConst/Styles.dart';
 import 'package:sajhabackup/Splashes/splashpage.dart';
+import 'package:sajhabackup/pages/otpscreen.dart';
 import 'package:sajhabackup/utils/toast.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -29,9 +29,11 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _confirmPasswordController = TextEditingController();
 
   XFile? _pickedImage;
+  bool _isPasswordVisible = false;
 
   Future<void> _pickImage() async {
-    final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedImage =
+        await _picker.pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
         _pickedImage = pickedImage;
@@ -39,10 +41,51 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Future<void> _register() async {
+  Future<void> sendcode() async {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: '+977' + _phoneController.text,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error Occurred: ${e.code}'),
+            ),
+          );
+        },
+        codeSent: (String vid, int? token) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPScreen(
+                vid: vid,
+                registerFunction: _register,
+              ),
+            ),
+          );
+        },
+        codeAutoRetrievalTimeout: (String vid) {},
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.code}'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.toString()}'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _register(String code) async {
     try {
       if (_validateForm()) {
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        UserCredential userCredential =
+            await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -60,34 +103,35 @@ class _RegisterPageState extends State<RegisterPage> {
           'Phone': _phoneController.text,
           'Email': _emailController.text,
           'Password': _passwordController.text,
-          'ProfilePicUrl': _pickedImage != null ? await _getProfilePicUrl(userId) : null,
+          'ProfilePicUrl':
+              _pickedImage != null ? await _getProfilePicUrl(userId) : null,
+          'uid': userId,
         });
 
         showToast(message: 'Verification Email Sent!');
         await userCredential.user!.sendEmailVerification();
-
-        
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => SplashPage()),
-        );
-
-                 showToast(message: 'Successfully Verified');
+        Future.delayed(Duration(seconds: 30));
+        if (userCredential.user!.emailVerified) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => SplashPage()),
+          );
+        }
+        showToast(message: 'Successfully Verified');
 
         print('Registration successful');
       }
     } catch (e) {
-     
       print('Error during registration: $e');
     }
   }
 
   Future<String?> _getProfilePicUrl(String userId) async {
     try {
-      final ref = FirebaseStorage.instance.ref().child('profile_pic/$userId.jpg');
+      final ref =
+          FirebaseStorage.instance.ref().child('profile_pic/$userId.jpg');
       return await ref.getDownloadURL();
     } catch (e) {
-      
       print('Error getting profile picture URL: $e');
       return null;
     }
@@ -95,7 +139,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _uploadProfilePicture(String userId) async {
     try {
-      final Reference storageReference = FirebaseStorage.instance.ref().child('profile_pic/$userId.jpg');
+      final Reference storageReference =
+          FirebaseStorage.instance.ref().child('profile_pic/$userId.jpg');
       await storageReference.putFile(
         File(_pickedImage!.path),
         SettableMetadata(contentType: 'image/jpeg'),
@@ -151,28 +196,25 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: color,
-        leading: BackButton(),
+        leading: BackButton(
+          color: Colors.white,
+        ),
       ),
-      
       body: Container(
-         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, Colors.white,Colors.deepPurple],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/images/register.png"),
+            fit: BoxFit.cover,
           ),
-         ),
+        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                 Center(
-                  child: Text('Sign Up',style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),),
-                ),
-                SizedBox(height: 15),
                 Container(
                   width: double.infinity,
                   height: 150,
@@ -197,39 +239,112 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 16.0),
                 TextFormField(
                   controller: _fullNameController,
-                  decoration: InputDecoration(labelText: 'Full Name'),
+                  decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16)),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _addressController,
-                  decoration: InputDecoration(labelText: 'Address'),
+                  decoration: InputDecoration(
+                      labelText: 'Address',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16)),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(labelText: 'Username'),
+                  decoration: InputDecoration(
+                      labelText: 'Username',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16)),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _phoneController,
-                  decoration: InputDecoration(labelText: 'Phone'),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    prefix: Text("+977"),
+                    prefixIcon: Icon(Icons.phone),
+                    labelText: 'Phone Number',
+                    hintStyle: TextStyle(
+                        color: Colors.black, fontFamily: regular, fontSize: 16),
+                    labelStyle: TextStyle(
+                        color: Colors.black, fontFamily: regular, fontSize: 16),
+                    enabledBorder: UnderlineInputBorder(),
+                  ),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                  decoration: InputDecoration(
+                      labelText: 'Email',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16)),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: 'Password'),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                      labelText: 'Password',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                        icon: Icon(_isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off),
+                      )),
                 ),
+                SizedBox(height: 15.0),
                 TextFormField(
                   controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: 'Confirm Password'),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      labelStyle: TextStyle(
+                          color: Colors.black,
+                          fontFamily: regular,
+                          fontSize: 16),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                        icon: Icon(_isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off),
+                      )),
                 ),
-                SizedBox(height: 16.0),
-                ElevatedButton(
-                  
-                  onPressed: _register,
-                  child: Text('Register'),
+                SizedBox(height: 30.0),
+                Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50), color: color),
+                  child: ElevatedButton(
+                    onPressed: sendcode,
+                    child: Text(
+                      'Register',
+                      style: TextStyle(
+                          fontSize: 18, fontFamily: regular, color: color1),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -239,4 +354,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-
