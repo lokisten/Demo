@@ -1,15 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:sajhabackup/EasyConst/Colors.dart';
 import 'package:sajhabackup/EasyConst/Styles.dart';
+import 'package:sajhabackup/Settings/Components/helpcenter.dart';
 
 class OTPScreen extends StatefulWidget {
   final String vid;
-  final void Function(String code)
-      registerFunction; // Function to register user
 
-  const OTPScreen({Key? key, required this.vid, required this.registerFunction})
-      : super(key: key);
+  const OTPScreen({Key? key, required this.vid}) : super(key: key);
 
   @override
   _OTPScreenState createState() => _OTPScreenState();
@@ -17,6 +16,31 @@ class OTPScreen extends StatefulWidget {
 
 class _OTPScreenState extends State<OTPScreen> {
   var code = "";
+
+  Future<void> signIn() async {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: widget.vid,
+      smsCode: code,
+    );
+
+    try {
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => helpcenter()));
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.code}'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.toString()}'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +85,7 @@ class _OTPScreenState extends State<OTPScreen> {
     return Center(
       child: ElevatedButton(
         onPressed: () {
-          widget.registerFunction(code); // Call register function with OTP code
+          signIn();
         },
         style: ElevatedButton.styleFrom(
           primary: color,
