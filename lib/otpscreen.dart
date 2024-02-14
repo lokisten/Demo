@@ -1,64 +1,126 @@
-import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:sajhabackup/EasyConst/Colors.dart';
-import 'package:sajhabackup/Splashes/splashpage.dart';
+import 'package:sajhabackup/EasyConst/Styles.dart';
+import 'package:sajhabackup/HomePage/homepage.dart';
 
 class OTPScreen extends StatefulWidget {
-  String verificationid;
-  OTPScreen({super.key, required this.verificationid});
+  final String vid;
+
+  const OTPScreen({Key? key, required this.vid}) : super(key: key);
 
   @override
-  State<OTPScreen> createState() => _OTPScreenState();
+  _OTPScreenState createState() => _OTPScreenState();
 }
 
 class _OTPScreenState extends State<OTPScreen> {
-  TextEditingController otpController = TextEditingController();
+  var code = "";
+
+  Future<void> signIn() async {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: widget.vid,
+      smsCode: code,
+    );
+
+    try {
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (context) => homepage()));
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.code}'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.toString()}'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("OTP Screen"),
-        centerTitle: true,
-        leading: BackButton(color: color1),
-      ), // AppBar
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: TextField(
-            controller: otpController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-                hintText: "Enter The OTP",
-                suffixIcon: Icon(Icons.phone),
-                border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(25)) // OutlineInputBorder
-                ), // InputDecoration
+      resizeToAvoidBottomInset: true,
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Image.asset('assets/images/otp.png', height: 200, width: 200),
+              Center(
+                child: Text(
+                  "OTP Verification",
+                  style: TextStyle(fontSize: 39),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 6),
+                child: Text(
+                  "Enter OTP",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: regular,
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              textCode(),
+              SizedBox(height: 80),
+              button(),
+            ],
           ),
         ),
-        SizedBox(height: 30),
-        ElevatedButton(
-          child: const Text('Confirm'),
-          onPressed: () async {
-            try {
-              PhoneAuthCredential credential =
-                  await PhoneAuthProvider.credential(
-                      verificationId: widget.verificationid,
-                      smsCode: otpController.text.toString());
-              FirebaseAuth.instance
-                  .signInWithCredential(credential)
-                  .then((value) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SplashPage()));
-              });
-            } catch (ex) {
-              log(ex.toString() as num);
-            }
-          },
+      ),
+    );
+  }
+
+  Widget button() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          signIn();
+        },
+        style: ElevatedButton.styleFrom(
+          primary: color,
+          padding: const EdgeInsets.all(16.0),
         ),
-      ]),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 80),
+          child: Text(
+            'Verify & Proceed',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget textCode() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(6.0),
+        child: PinCodeTextField(
+          appContext: context,
+          length: 6,
+          onChanged: (value) {
+            setState(() {
+              code = value;
+            });
+          },
+          // Other properties you may need to customize the appearance
+        ),
+      ),
     );
   }
 }

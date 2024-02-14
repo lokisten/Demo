@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "198996371343",
+    "project_id": "sajhabookstore",
+    "storage_bucket": "sajhabookstore.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198996371343:android:508c7cd18165d39e404dfa",
+        "android_client_info": {
+          "package_name": "com.example.sajhabookstore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "198996371343-2m88tpqr1lurv1nudp9l1r1drjuvabc0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sajhabookstore",
+            "certificate_hash": "c01ef6b5b00c22b70d167f3167b01fd98fa646d1"
+          }
+        },
+        {
+          "client_id": "198996371343-io92qmgul39o2mq1isf7obh20s31mnt9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB22xWy99xjXerlI-c-sFvShkTrUlFs3nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "198996371343-io92qmgul39o2mq1isf7obh20s31mnt9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

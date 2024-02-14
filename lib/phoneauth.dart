@@ -3,57 +3,125 @@ import 'package:flutter/material.dart';
 import 'package:sajhabackup/EasyConst/Colors.dart';
 import 'package:sajhabackup/otpscreen.dart';
 
-class phoneauth extends StatefulWidget {
-  const phoneauth({super.key});
+class PhoneHome extends StatefulWidget {
+  const PhoneHome({Key? key}) : super(key: key);
 
   @override
-  State<phoneauth> createState() => _phoneauthState();
+  _PhoneHomeState createState() => _PhoneHomeState();
 }
 
-class _phoneauthState extends State<phoneauth> {
-  TextEditingController phoneController = TextEditingController();
+class _PhoneHomeState extends State<PhoneHome> {
+  TextEditingController phonenumber = TextEditingController();
+
+  Future<void> sendcode() async {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: '+977' + phonenumber.text,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error Occurred: ${e.code}'),
+            ),
+          );
+        },
+        codeSent: (String vid, int? token) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPScreen(vid: vid),
+            ),
+          );
+        },
+        codeAutoRetrievalTimeout: (String vid) {},
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.code}'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Occurred: ${e.toString()}'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("PhoneAuth"),
-        centerTitle: true,
-        leading: BackButton(color: color1),
-      ), // AppBar
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: TextField(
-            controller: phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-                hintText: "Enter your number",
-                suffixIcon: Icon(Icons.phone),
-                border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(24)) // OutlineInputBorder
-                ), // InputDecoration
+      body: Center(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 300,
+              width: 300,
+            ),
+            Center(
+              child: Text(
+                "Sajha Bookstore",
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              ),
+            ),
+            /* Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 6),
+              child: Text("OTP Sent"),
+            ),*/
+            SizedBox(height: 29),
+            phonetext(),
+            SizedBox(height: 50),
+            button(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget button() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          sendcode();
+        },
+        style: ElevatedButton.styleFrom(
+          primary: color,
+          padding: const EdgeInsets.all(16.0),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 90),
+          child: Text(
+            'Receive OTP',
+            style: TextStyle(
+              fontSize: 18.0,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        SizedBox(height: 30),
-        ElevatedButton(
-          onPressed: () async {
-            await FirebaseAuth.instance.verifyPhoneNumber(
-                verificationCompleted: (PhoneAuthCredential credential) {},
-                verificationFailed: (FirebaseAuthException ex) {},
-                codeSent: (String verificationid, int? resendtoken) {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              OTPScreen(verificationid: verificationid)));
-                },
-                codeAutoRetrievalTimeout: (String verificationId) {},
-                phoneNumber: phoneController.text.toString());
-          },
-          child: const Text('Verify'),
+      ),
+    );
+  }
+
+  Widget phonetext() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 50),
+      child: TextField(
+        controller: phonenumber,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          prefix: Text("+977"),
+          prefixIcon: Icon(Icons.phone),
+          labelText: 'Enter Phone Number',
+          hintStyle: TextStyle(color: Colors.grey),
+          labelStyle: TextStyle(color: Colors.grey),
+          enabledBorder: UnderlineInputBorder(),
         ),
-      ]),
+      ),
     );
   }
 }
